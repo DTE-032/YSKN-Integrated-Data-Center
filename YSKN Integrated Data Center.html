@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YSKN Integrated Data Center - Pusat Kendali Operasional Yayasan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            DEFAULT: '#0A1628',
+                            dark: '#060E1A',
+                            light: '#153869',
+                            muted: '#1E293B'
+                        },
+                        gold: {
+                            DEFAULT: '#C9A227',
+                            light: '#E5C158',
+                            dark: '#A68218'
+                        },
+                        accent: {
+                            DEFAULT: '#E11D48',
+                            hover: '#BE123C',
+                            light: '#FFE4E6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar & chart container constraints */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 280px;
+            max-height: 320px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+            }
+        }
+    </style>
+    <!-- Chosen Palette: YSKN Navy Blue (#0A1628), Secondary Navy (#153869), Accent Gold (#C9A227), Interactive Pink-Red (#E11D48), Canvas Neutral Light (#FAFAFC) -->
+    <!-- Application Structure Plan:
+        Structure: Executive Command Center Layout with top-level RBAC role swapper, main functional navigation sidebar, and dynamic content pane.
+        Rationale: The blueprint emphasizes role-based visibility (Pembina, Pengurus, Pengawas) and 10 integrated modules. A role-switchable dashboard structure allows users to test perspectives while navigating seamlessly between modules without page reloads.
+        Key Sections:
+        1. Masthead & Dynamic RBAC Switcher: Immediate context on current user authority level (UU 16/2001 & UU 28/2004 context).
+        2. Module Navigation: 10 primary operational modules accessible via responsive sidebar/tabs.
+        3. Dynamic Content Panels:
+           - Executive Overview: KPI cards, financial vs program output charts, urgent SLA feed.
+           - Management & Field Programs: Program status table, GIS regional distribution, progress tracking.
+           - Financials & Budget: Budget vs Actual analysis chart, PSAK 109 breakdown, restricted/unrestricted reserves.
+           - Beneficiary Register: Anti-duplication screening tool, demographic coverage.
+           - Donors & Partners: CRM lifecycle, donor lifetime value, dynamic report generator.
+           - Monitoring & Evaluation: SROI metrics, output vs outcome matrix, target variance indicators.
+           - Governance & Legal Vault: Document expiration countdown clock, compliance check.
+           - Approvals & Tasks Workflow: Interactive approval request simulation with SLA timers.
+           - Oversight & Audit Trail: Risk heatmap, immutable audit log viewer, public auditor portal simulation.
+           - Reporting Center: One-click exportable official report previewer (Rapat Pembina, Kemenkumham, Donor).
+    -->
+    <!-- Visualization & Content Choices:
+        - Executive Overview: Multi-axis Chart.js Line/Bar combination (Donations vs Disbursements).
+        - Financials: Chart.js Doughnut for Fund Allocation (Restricted vs Unrestricted vs Admin) and Horizontal Bar for Budget Variance.
+        - Beneficiary Data: HTML-based Data Matrix with Interactive Filter & NIK Duplication Filter simulator.
+        - Monev Matrix: Progress indicators using HTML/Tailwind progress bars.
+        - Risk Heatmap: Tailwind Grid-based 3x3 Risk Matrix for Pengawas oversight.
+        - SLA Workflow: Interactive status toggles for Pengurus approvals.
+        - CONFIRMATION: NO SVG graphics used. Icons created using Unicode standard symbols and structured HTML elements. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans">
+
+    <!-- Top Masthead / Header -->
+    <header class="bg-navy text-white flex-shrink-0 border-b-2 border-gold sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand & Identity -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded bg-navy-light border border-gold flex items-center justify-center font-bold text-gold text-xl shadow">
+                    YSKN
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">YSKN Integrated Data Center</h1>
+                    <p class="text-xs text-gold-light hidden sm:block">Pusat Kendali Operasional Yayasan Sahabat Kemanusiaan Nusantara</p>
+                </div>
+            </div>
+
+            <!-- Role Selector & Status -->
+            <div class="flex items-center space-x-3">
+                <div class="hidden md:flex flex-col text-right">
+                    <span class="text-xs text-slate-300">Mode Modul Organ Yayasan:</span>
+                    <span id="role-description" class="text-xs font-semibold text-gold">Akses Penuh Pengurus (Pelaksana)</span>
+                </div>
+                <div class="relative">
+                    <select id="role-selector" onchange="switchRole(this.value)" class="bg-navy-light text-white text-xs sm:text-sm font-medium border border-gold/50 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold cursor-pointer">
+                        <option value="pengurus" selected>👤 Pengurus (Eksekusi & Operasional)</option>
+                        <option value="pembina">👑 Pembina (Kewenangan Tertinggi)</option>
+                        <option value="pengawas">🔍 Pengawas (Audit & Kontrol Independent)</option>
+                        <option value="lapangan">⛺ Tim Lapangan / Program</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-8 py-4 gap-4">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-shrink-0 overflow-hidden">
+            <div class="p-3 bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500 uppercase tracking-wider flex justify-between items-center">
+                <span>Modul Utama</span>
+                <span id="module-count-badge" class="bg-navy text-gold text-[10px] px-2 py-0.5 rounded-full font-bold">10 Modul</span>
+            </div>
+            <nav class="flex-1 overflow-y-auto p-2 space-y-1 text-sm font-medium" id="sidebar-nav">
+                <!-- Nav items generated via JS or styled directly -->
+                <button onclick="navigateTo('overview')" id="nav-overview" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors bg-navy text-white">
+                    <span class="flex items-center space-x-2.5">
+                        <span>📊</span>
+                        <span>Executive Overview</span>
+                    </span>
+                    <span class="text-xs bg-accent text-white px-1.5 py-0.5 rounded-full font-bold">3 SLA</span>
+                </button>
+                <button onclick="navigateTo('program')" id="nav-program" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>🎯</span>
+                        <span>Manajemen Program</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('keuangan')" id="nav-keuangan" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>💰</span>
+                        <span>Keuangan & Anggaran</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('penerima')" id="nav-penerima" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>👥</span>
+                        <span>Penerima Manfaat</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('donasi')" id="nav-donasi" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>🤝</span>
+                        <span>Donasi & Kemitraan</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('monev')" id="nav-monev" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>📈</span>
+                        <span>Monitoring & Evaluasi</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('legal')" id="nav-legal" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>📜</span>
+                        <span>Dokumen & Legalitas</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('tugas')" id="nav-tugas" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>⚡</span>
+                        <span>Tugas & Persetujuan</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('pengawasan')" id="nav-pengawasan" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>🛡️</span>
+                        <span>Pengawasan & Kepatuhan</span>
+                    </span>
+                </button>
+                <button onclick="navigateTo('laporan')" id="nav-laporan" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
+                    <span class="flex items-center space-x-2.5">
+                        <span>📑</span>
+                        <span>Pusat Laporan</span>
+                    </span>
+                </button>
+            </nav>
+            <!-- Organ Governance Info Box -->
+            <div class="p-3 bg-navy-light text-white border-t border-slate-200 text-xs">
+                <div class="font-bold text-gold mb-1">Landasan Regulasi Organ:</div>
+                <p id="governance-footnote" class="text-slate-300 leading-snug">
+                    UU No.16/2001 Jo. UU No.28/2004 mengatur batas wewenang tegas antar-organ guna mencegah tanggung jawab pribadi secara tanggung renteng.
+                </p>
+            </div>
+        </aside>
+
+        <!-- Dynamic Main Content Window -->
+        <main class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-y-auto p-4 sm:p-6" id="main-content-container">
+            
+            <!-- SECTION 1: EXECUTIVE OVERVIEW -->
+            <section id="section-overview" class="space-y-6">
+                <!-- Section Intro Paragraph -->
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Executive Overview Dashboard</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Modul ini menyajikan sintesis kondisi kesehatan yayasan secara real-time, mengkonsolidasikan data keuangan, capaian program kemanusiaan, serta item tindakan kritis ber-SLA tinggi. Sesuai prinsip <em>5-Second Rule</em>, Pembina dan Pengurus dapat mengevaluasi posisi yayasan tanpa perlu memproses data mentah.
+                    </p>
+                </div>
+
+                <!-- KPI Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Akumulasi Penerimaan 2026</div>
+                        <div class="text-2xl font-bold text-navy mt-1">Rp 4.850.000.000</div>
+                        <div class="text-xs text-emerald-600 mt-1 font-medium">↑ 14% dari Target RKAT</div>
+                        <div class="absolute top-0 right-0 w-2 h-full bg-gold"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Realisasi Program & Bantuan</div>
+                        <div class="text-2xl font-bold text-navy mt-1">Rp 3.620.000.000</div>
+                        <div class="text-xs text-slate-500 mt-1">Penyerapan: <span class="font-bold text-navy">74.6%</span></div>
+                        <div class="absolute top-0 right-0 w-2 h-full bg-navy-light"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Total Penerima Manfaat</div>
+                        <div class="text-2xl font-bold text-navy mt-1">18.450 Jiwa</div>
+                        <div class="text-xs text-emerald-600 mt-1 font-medium">100% NIK Terverifikasi</div>
+                        <div class="absolute top-0 right-0 w-2 h-full bg-emerald-500"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Skor Kepatuhan Organisasi</div>
+                        <div class="text-2xl font-bold text-gold-dark mt-1">96.8 %</div>
+                        <div class="text-xs text-slate-500 mt-1">Audit Trail & Legalitas Valid</div>
+                        <div class="absolute top-0 right-0 w-2 h-full bg-accent"></div>
+                    </div>
+                </div>
+
+                <!-- Main Overview Charts & Action Feed -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chart Area (2 Cols) -->
+                    <div class="lg:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="font-bold text-navy text-sm sm:text-base">Tren Arus Dana & Penyaluran Program (2026)</h3>
+                                <p class="text-xs text-slate-500">Perbandingan penerimaan donasi vs eksekusi program bulanan (dalam Juta Rp)</p>
+                            </div>
+                            <span class="text-xs bg-navy/10 text-navy font-bold px-2 py-1 rounded">Update Real-Time</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="overviewFinancialChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- SLA Urgent Action Feed (1 Col) -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+                                <h3 class="font-bold text-navy text-sm flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-accent inline-block animate-ping"></span>
+                                    <span>Persetujuan & Perhatian Kritis</span>
+                                </h3>
+                                <span class="text-xs bg-accent-light text-accent font-bold px-2 py-0.5 rounded">3 Item</span>
+                            </div>
+                            <div class="mt-3 space-y-3 text-xs">
+                                <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Pencairan Program Tanggap Bencana</span>
+                                        <span class="text-accent font-semibold">SLA: 2 Jam</span>
+                                    </div>
+                                    <p class="text-slate-600 mt-1">Nominal: <strong>Rp 150.000.000</strong> (Memerlukan persetujuan Ketua Pengurus)</p>
+                                    <button onclick="quickApprove('Pencairan Tanggap Bencana')" class="mt-2 w-full bg-accent hover:bg-accent-hover text-white font-bold py-1 px-2 rounded text-xs transition">
+                                        Proses Persetujuan Sekarang
+                                    </button>
+                                </div>
+                                <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Perpanjangan Izin Operasional Kemensos</span>
+                                        <span class="text-amber-700 font-semibold">H-24 Hari</span>
+                                    </div>
+                                    <p class="text-slate-600 mt-1">Dokumen pendukung telah diunggah oleh Sekretaris.</p>
+                                </div>
+                                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Laporan Audit Independen Q3</span>
+                                        <span class="text-navy font-semibold">Review Pengawas</span>
+                                    </div>
+                                    <p class="text-slate-600 mt-1">Draft Catatan Pengawas siap untuk disahkan.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 text-center">
+                            <button onclick="navigateTo('tugas')" class="text-xs text-navy font-bold hover:underline">Lihat Semua Agenda & Task List →</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: MANAJEMEN PROGRAM -->
+            <section id="section-program" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Manajemen Program & Distribusi Lapangan</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Memantau seluruh siklus hidup program kemanusiaan YSKN mulai dari alokasi target, status operasional, hingga koordinat penyebaran geografis penerima manfaat di wilayah Nusantara.
+                    </p>
+                </div>
+
+                <!-- Program Filter & Actions -->
+                <div class="flex flex-col sm:flex-row justify-between gap-3 bg-slate-100 p-3 rounded-lg text-xs">
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="font-bold text-slate-700">Filter Klaster:</span>
+                        <button onclick="filterProgram('all')" class="bg-navy text-white px-3 py-1 rounded font-medium">Semua</button>
+                        <button onclick="filterProgram('bencana')" class="bg-white border text-slate-700 px-3 py-1 rounded font-medium hover:bg-slate-200">Tanggap Bencana</button>
+                        <button onclick="filterProgram('pendidikan')" class="bg-white border text-slate-700 px-3 py-1 rounded font-medium hover:bg-slate-200">Pendidikan</button>
+                        <button onclick="filterProgram('kesehatan')" class="bg-white border text-slate-700 px-3 py-1 rounded font-medium hover:bg-slate-200">Kesehatan Masyarakat</button>
+                    </div>
+                    <button onclick="alert('Formulir Pengajuan Program Baru Hanya Dapat Diakses Oleh Ketua Pengurus')" class="bg-accent hover:bg-accent-hover text-white font-bold px-3 py-1.5 rounded transition">
+                        + Ajukan Program Baru
+                    </button>
+                </div>
+
+                <!-- Program List Data Table -->
+                <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-navy text-white font-semibold">
+                            <tr>
+                                <th class="p-3">Nama Program</th>
+                                <th class="p-3">Klaster</th>
+                                <th class="p-3">Lokasi</th>
+                                <th class="p-3">Target / Realisasi</th>
+                                <th class="p-3">Anggaran</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200" id="program-table-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Simulated GIS Map Component -->
+                <div class="bg-slate-900 text-white p-4 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gold text-sm flex items-center space-x-2">
+                            <span>🗺️</span>
+                            <span>Sebaran Geografis Intervensi Kemanusiaan YSKN</span>
+                        </h3>
+                        <span class="text-xs bg-navy-light text-slate-300 px-2 py-0.5 rounded">Visualisasi Vektor GIS</span>
+                    </div>
+                    <div class="bg-navy-dark h-48 rounded-lg border border-slate-800 flex items-center justify-center relative overflow-hidden">
+                        <!-- Simulated Map Grid Graphic -->
+                        <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#C9A227_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                        <!-- Region Pins -->
+                        <div class="absolute top-12 left-1/4 flex flex-col items-center">
+                            <span class="w-3 h-3 bg-accent rounded-full animate-ping"></span>
+                            <span class="text-[10px] bg-slate-800/80 px-1.5 py-0.5 rounded mt-1 border border-gold">Sumatera (3 Program)</span>
+                        </div>
+                        <div class="absolute top-20 left-1/2 flex flex-col items-center">
+                            <span class="w-3 h-3 bg-gold rounded-full"></span>
+                            <span class="text-[10px] bg-slate-800/80 px-1.5 py-0.5 rounded mt-1 border border-gold">Jawa & DIY (8 Program)</span>
+                        </div>
+                        <div class="absolute top-16 right-1/4 flex flex-col items-center">
+                            <span class="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></span>
+                            <span class="text-[10px] bg-slate-800/80 px-1.5 py-0.5 rounded mt-1 border border-gold">Nusa Tenggara (2 Program)</span>
+                        </div>
+                        <div class="text-center z-10">
+                            <p class="text-xs text-slate-400">Peta Interaktif Lokasi Penyaluran Bantuan Real-Time</p>
+                            <p class="text-xs text-gold mt-1 font-bold">13 Titik Posko Operasional Aktif</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: KEUANGAN & ANGGARAN -->
+            <section id="section-keuangan" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Keuangan, Anggaran & Transparansi Dana</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Sistem pelaporan keuangan sesuai standar akuntansi nirlaba (PSAK 109 / ISAK 35). Menyajikan pemisahan ketat antara Dana Terikat (Restricted) dan Dana Tidak Terikat (Unrestricted) guna menjamin akuntabilitas donor.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Allocation Donut Chart -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-navy text-sm mb-2">Struktur Alokasi Penerimaan Dana</h3>
+                        <p class="text-xs text-slate-500 mb-3">Pemisahan Sesuai Peruntukan Syarat Donatur</p>
+                        <div class="chart-container">
+                            <canvas id="financialAllocationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Budget vs Actual Bar Chart -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-navy text-sm mb-2">Realisasi Anggaran Per Klaster (Budget vs Actual)</h3>
+                        <p class="text-xs text-slate-500 mb-3">Dalam Jutaan Rupiah (RKAT 2026)</p>
+                        <div class="chart-container">
+                            <canvas id="budgetVarianceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Statement Summary Table -->
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <h3 class="font-bold text-navy text-sm mb-3">Ringkasan Posisi Keuangan & Kas (Per Oktober 2026)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <span class="text-slate-500 block">Kas & Setara Kas (Unrestricted):</span>
+                            <span class="text-lg font-bold text-navy">Rp 1.230.000.000</span>
+                            <p class="text-[10px] text-slate-500 mt-1">Dapat digunakan untuk operasional yayasan.</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <span class="text-slate-500 block">Kas Dana Terikat Program:</span>
+                            <span class="text-lg font-bold text-emerald-700">Rp 2.450.000.000</span>
+                            <p class="text-[10px] text-slate-500 mt-1">Khusus untuk eksekusi program donor terikat.</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <span class="text-slate-500 block">Dana Cadangan Operasional (MOR):</span>
+                            <span class="text-lg font-bold text-gold-dark">6.4 Bulan</span>
+                            <p class="text-[10px] text-slate-500 mt-1">Batas aman standar tata kelola: > 6 Bulan.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: DATA PENERIMA MANFAAT -->
+            <section id="section-penerima" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Pusat Data Penerima Manfaat Terverifikasi</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Sistem pencegahan bantuan ganda (*anti-duplication algorithm*) berbasis NIK terenkripsi. Mengelola riwayat layanan kemanusiaan individu dan kelompok sasaran secara akurat dan mematuhi regulasi Pelindungan Data Pribadi.
+                    </p>
+                </div>
+
+                <!-- Interactive Search & Filter Tool -->
+                <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div class="w-full sm:w-1/2 relative">
+                        <input type="text" id="nik-search-input" onkeyup="searchBeneficiary()" placeholder="Cari Berdasarkan NIK Terenkripsi atau Nama..." class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy">
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs w-full sm:w-auto justify-end">
+                        <span class="font-bold text-slate-700">Skrining Duplikasi:</span>
+                        <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full border border-emerald-300">
+                            ✓ Status NIK Clean (0 Duplikasi)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Beneficiary List Table -->
+                <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-navy text-white font-semibold">
+                            <tr>
+                                <th class="p-3">ID / NIK Hash</th>
+                                <th class="p-3">Nama Penerima</th>
+                                <th class="p-3">Wilayah / Domicile</th>
+                                <th class="p-3">Kategori Bantuan</th>
+                                <th class="p-3">Tanggal Penyaluran</th>
+                                <th class="p-3">Status Verifikasi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200" id="beneficiary-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SECTION 5: DONASI & KEMITRAAN -->
+            <section id="section-donasi" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Manajemen Donatur & Mitramania (CRM)</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Mengelola portofolio donatur individu, korporasi (CSR), dan mitra lembaga donor. Dilengkapi pelacak komitmen bantuan serta pembuat laporan pertanggungjawaban donor otomatis.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Donatur Perorangan Aktif</span>
+                        <div class="text-2xl font-bold text-navy mt-1">1.240 Rekening</div>
+                        <span class="text-xs text-emerald-600 font-medium">Retensi Donatur: 82%</span>
+                    </div>
+                    <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Mitra Korporasi & CSR</span>
+                        <div class="text-2xl font-bold text-navy mt-1">28 Entitas</div>
+                        <span class="text-xs text-gold-dark font-medium">12 MoU Aktif Berlaku</span>
+                    </div>
+                    <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Laporan Pertanggungjawaban Rpt</span>
+                        <div class="text-2xl font-bold text-emerald-700 mt-1">100% Tepat Waktu</div>
+                        <span class="text-xs text-slate-500">Sesuai SLA Kemitraan</span>
+                    </div>
+                </div>
+
+                <!-- Partner List & Report Generator Button -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-navy text-sm">Daftar Komitmen Kemitraan Utama</h3>
+                        <button onclick="generateDonorReport()" class="bg-navy hover:bg-navy-light text-gold font-bold px-3 py-1.5 rounded text-xs transition border border-gold/40">
+                            📑 Generasi Laporan Impact Donatur
+                        </button>
+                    </div>
+                    <div class="space-y-3 text-xs" id="donor-list-container">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: MONITORING & EVALUASI -->
+            <section id="section-monev" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Monitoring, Evaluasi & Kerangka Dampak (Monev)</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Pengukuran capaian berbasis *Social Return on Investment* (SROI) dan indikator kinerja utama (*KPI*). Menghubungkan output fisik langsung dengan dampak jangka panjang pada masyarakat sasaran.
+                    </p>
+                </div>
+
+                <!-- Impact Indicator Progress Matrix -->
+                <div class="space-y-4" id="monev-matrix-container">
+                    <!-- Progress items inserted via JS -->
+                </div>
+            </section>
+
+            <!-- SECTION 7: DOKUMEN & LEGALITAS -->
+            <section id="section-legal" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Brankas Digital Legalitas & Pengingat Masa Berlaku</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Menyimpan seluruh dokumen otentik yayasan (Akta Pendirian, SK Kemenkumham, Izin Kegiatan Kemensos, SOP Operasional). Dilengkapi sistem *expiration alert engine* bertingkat (H-90 s/d H-7).
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="legal-docs-grid">
+                    <!-- Document items populated via JS -->
+                </div>
+            </section>
+
+            <!-- SECTION 8: TUGAS & PERSETUJUAN -->
+            <section id="section-tugas" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Pusat Persetujuan Operasional & Matriks Escalation</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Mesin alur kerja administratif terpadu. Mengatur persetujuan pengeluaran dana, otorisasi program, dan penjadwalan Rapat Organ Yayasan berdasarkan batas kewenangan nominal.
+                    </p>
+                </div>
+
+                <div class="space-y-3" id="task-approval-list">
+                    <!-- Workflow items populated via JS -->
+                </div>
+            </section>
+
+            <!-- SECTION 9: PENGAWASAN & KEPATUHAN -->
+            <section id="section-pengawasan" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Konsol Pengawasan, Audit Trail & Manajemen Risiko</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Fasilitas khusus organ Pengawas untuk menjalankan fungsi kontrol independen (UU Yayasan Pasal 40). Menyediakan log transaksi imutabel (*Write-Once-Read-Many*) dan peta risiko operasional.
+                    </p>
+                </div>
+
+                <!-- Risk Heatmap Matrix Grid -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-navy text-sm mb-1">Matriks Peta Risiko Operasional & Legal (Risk Heatmap)</h3>
+                    <p class="text-xs text-slate-500 mb-4">Pemantauan Probabilitas vs Dampak Kerugian Yayasan</p>
+                    
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs font-bold text-white">
+                        <div class="bg-amber-500 p-3 rounded flex flex-col justify-center">
+                            <span>Risiko Likuiditas Program</span>
+                            <span class="text-[10px] font-normal opacity-90">Probabilitas: Sedang | Dampak: Tinggi</span>
+                        </div>
+                        <div class="bg-rose-600 p-3 rounded flex flex-col justify-center">
+                            <span>Keterlambatan Izin Kemenkumham</span>
+                            <span class="text-[10px] font-normal opacity-90">Probabilitas: Tinggi | Dampak: Tinggi</span>
+                        </div>
+                        <div class="bg-rose-700 p-3 rounded flex flex-col justify-center">
+                            <span>Ketidaksesuaian PSAK 109</span>
+                            <span class="text-[10px] font-normal opacity-90">Probabilitas: Rendah | Dampak: Kritis</span>
+                        </div>
+                        <div class="bg-emerald-600 p-3 rounded flex flex-col justify-center">
+                            <span>Duplikasi Data Beneficiary</span>
+                            <span class="text-[10px] font-normal opacity-90">Probabilitas: Rendah | Dampak: Sedang</span>
+                        </div>
+                        <div class="bg-emerald-600 p-3 rounded flex flex-col justify-center">
+                            <span>Disrupsi Akses Server IDCenter</span>
+                            <span class="text-[10px] font-normal opacity-90">Probabilitas: Rendah | Dampak: Rendah</span>
+                        </div>
+                        <div class="bg-amber-500 p-3 rounded flex flex-col justify-center">
+                            <span>Fluktuasi Harga Komoditas Bantuan</span>
+                            <span class="text-[10px] font-normal opacity-90">Probabilitas: Tinggi | Dampak: Rendah</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Immutable Audit Trail Viewer -->
+                <div class="bg-slate-900 text-slate-200 p-4 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gold text-xs font-mono uppercase tracking-wider">Log Jejak Aktivitas Imutabel (Audit Trail System)</h3>
+                        <span class="text-[10px] bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded font-mono">ENCRYPTED WORM LOG</span>
+                    </div>
+                    <div class="space-y-2 text-xs font-mono text-slate-300 max-h-40 overflow-y-auto" id="audit-log-box">
+                        <!-- Log lines populated via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 10: PUSAT LAPORAN -->
+            <section id="section-laporan" class="space-y-6 hidden">
+                <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg">
+                    <h2 class="text-lg font-bold text-navy">Pusat Kompilasi Laporan Resmi Organ Yayasan</h2>
+                    <p class="text-sm text-slate-600 mt-1">
+                        Fasilitas otomatisasi penyusunan dokumen Laporan Tahunan Pembina, Laporan Audit Keuangan Akuntan Publik, dan Laporan Kepatuhan Regulator dalam satu klik.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs bg-navy text-gold px-2 py-0.5 rounded font-bold">Wajib UU Yayasan</span>
+                            <h3 class="font-bold text-navy text-base mt-2">Laporan Tahunan Pembina</h3>
+                            <p class="text-xs text-slate-500 mt-1">Mencakup evaluasi kekayaan, hak/kewajiban, dan kineja Pengurus/Pengawas 2026.</p>
+                        </div>
+                        <button onclick="previewReport('Laporan Tahunan Pembina')" class="mt-4 w-full bg-navy hover:bg-navy-light text-white font-bold py-2 rounded text-xs transition">
+                            👁️ Preview & Export PDF
+                        </button>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Audited PSAK 109</span>
+                            <h3 class="font-bold text-navy text-base mt-2">Laporan Audit Akuntan Publik</h3>
+                            <p class="text-xs text-slate-500 mt-1">Laporan posisi keuangan, aktivitas, dan arus kas publik terverifikasi.</p>
+                        </div>
+                        <button onclick="previewReport('Laporan Audit Akuntan Publik')" class="mt-4 w-full bg-navy hover:bg-navy-light text-white font-bold py-2 rounded text-xs transition">
+                            👁️ Preview & Export PDF
+                        </button>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl p-4 bg-white flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">Kemitraan & Donor</span>
+                            <h3 class="font-bold text-navy text-base mt-2">Laporan Konsolidasi Donor</h3>
+                            <p class="text-xs text-slate-500 mt-1">Laporan pertanggungjawaban penggunaan dana terikat proyek kemanusiaan.</p>
+                        </div>
+                        <button onclick="previewReport('Laporan Konsolidasi Donor')" class="mt-4 w-full bg-navy hover:bg-navy-light text-white font-bold py-2 rounded text-xs transition">
+                            👁️ Preview & Export PDF
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer Area -->
+    <footer class="bg-navy border-t border-gold/30 text-white text-xs py-3 flex-shrink-0">
+        <div class="max-w-7xl mx-auto px-4 text-center sm:flex sm:justify-between sm:text-left text-slate-400">
+            <p>© 2026 Yayasan Sahabat Kemanusiaan Nusantara (YSKN). Hak Cipta Dilindungi.</p>
+            <p class="mt-1 sm:mt-0 text-gold">Sistem Kendali Operasional Berbasis Akuntabilitas High-Governance</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- BASE DATA STRUCTURES ---
+        const programsData = [
+            { id: 1, name: 'Tanggap Bencana Banjir Bandang Demak', cluster: 'bencana', location: 'Jawa Tengah', target: '2.500 Paket', real: '2.500 Paket', budget: 'Rp 450.000.000', status: 'Selesai' },
+            { id: 2, name: 'Beasiswa Pendidikan Sahabat Nusantara', cluster: 'pendidikan', location: 'Jawa Barat & DIY', target: '500 Siswa', real: '420 Siswa', budget: 'Rp 600.000.000', status: 'Berjalan' },
+            { id: 3, name: 'Posko Kesehatan & Gizi Ibu Anak', cluster: 'kesehatan', location: 'NTT', target: '1.200 Balita', real: '950 Balita', budget: 'Rp 320.000.000', status: 'Berjalan' },
+            { id: 4, name: 'Bantuan Pangan Respon Darurat Erupsi', cluster: 'bencana', location: 'Sumatera Utara', target: '1.000 Paket', real: '1.000 Paket', budget: 'Rp 280.000.000', status: 'Selesai' }
+        ];
+
+        const beneficiaryData = [
+            { nikHash: '3321**********0001', name: 'Ahmad S.', location: 'Demak, Jawa Tengah', category: 'Sembako & Hunian', date: '12 Okt 2026', status: 'Terverifikasi NIK' },
+            { nikHash: '3204**********0004', name: 'Siti M.', location: 'Bandung, Jawa Barat', category: 'Beasiswa Pendidikan', date: '01 Sep 2026', status: 'Terverifikasi NIK' },
+            { nikHash: '5302**********0009', name: 'Yohanes K.', location: 'TTS, Nusa Tenggara Timur', category: 'Layanan Medis', date: '15 Okt 2026', status: 'Terverifikasi NIK' },
+            { nikHash: '1205**********0003', name: 'Budi T.', location: 'Karo, Sumatera Utara', category: 'Paket Sanitasi', date: '20 Sep 2026', status: 'Terverifikasi NIK' }
+        ];
+
+        const donorData = [
+            { partner: 'PT Nusantara Power Tbk', commitment: 'Rp 1.000.000.000', project: 'Program Beasiswa & Edukasi Lingkungan', status: 'Terikat (Restricted)', reportDueDate: '15 Nov 2026' },
+            { partner: 'Global Relief Foundation', commitment: 'Rp 850.000.000', project: 'Posko Kesehatan & Air Bersih NTT', status: 'Terikat (Restricted)', reportDueDate: '30 Nov 2026' },
+            { partner: 'Konsorsium Alumni Peduli', commitment: 'Rp 500.000.000', project: 'Dana Tanggap Bencana Umum', status: 'Bebas (Unrestricted)', reportDueDate: 'Triwulan IV' }
+        ];
+
+        const monevData = [
+            { indicator: 'Distribusi Paket Logistik Sembako', target: 2000, real: 2050, unit: 'Paket' },
+            { indicator: 'Pemeriksaan Kesehatan Kerapatan Balita', target: 1500, real: 1280, unit: 'Pasien' },
+            { indicator: 'Siswa Penerima Beasiswa Aktif Belajar', target: 500, real: 420, unit: 'Anak' },
+            { indicator: 'Penyediaan Titik Sumur Air Bersih', target: 10, real: 10, unit: 'Lokasi' }
+        ];
+
+        const legalData = [
+            { docName: 'Akta Pendirian Yayasan & Pengesahan Kemenkumham', no: 'AHU-0012345.AH.01.04', status: 'Berlaku Permanen', alert: 'Valid' },
+            { docName: 'Izin Operasional Lembaga Kesejahteraan Social (LKS)', no: 'Kemensos/LKS/2023/889', status: 'Berakhir 30 Nov 2026', alert: 'H-31 Hari (Diperbarui)' },
+            { docName: 'Nomor Pokok Wajib Pajak (NPWP) Yayasan', no: '01.345.678.9-012.000', status: 'Aktif / Valid', alert: 'Valid' },
+            { docName: 'SOP Tata Kelola Keuangan & Pencairan Anggaran', no: 'YSKN-SOP-FIN-2025-V2', status: 'Terbitan 2025', alert: 'Internal Document' }
+        ];
+
+        const taskData = [
+            { title: 'Pencairan Dana Program Respon Tanggap Bencana Demak', amount: 'Rp 150.000.000', requester: 'Tim Program Bencana', status: 'Menunggu Ketua Pengurus', urgent: true },
+            { title: 'Pengesahan Revisi RKAT Mid-Year 2026', amount: 'Penyesuaian Pos', requester: 'Bendahara', status: 'Menunggu Pengesahan Pembina', urgent: false },
+            { title: 'Verifikasi Laporan Keuangan Triwulan III', amount: 'Internal Audit', requester: 'Tim Auditor Internal', status: 'Menunggu Pengawas', urgent: false }
+        ];
+
+        const auditLogs = [
+            '[2026-10-30 16:42:10] SYS_AUTH: User Bendahara logged in via MFA. Session token #88392.',
+            '[2026-10-30 15:12:04] FIN_DISBURSE: Approval requested for Rp 150,000,000 (Prog: Demak Bencana).',
+            '[2026-10-30 11:05:30] NIK_SCREEN: Anti-duplication check passed for 45 new beneficiaries in NTT.',
+            '[2026-10-29 09:30:00] GOV_ALERT: Auto-reminder generated for Kemensos License renewal (H-31).'
+        ];
+
+        // --- CHART INSTANCES ---
+        let overviewChart = null;
+        let allocationChart = null;
+        let budgetChart = null;
+
+        // --- INIT FUNCTION ---
+        document.addEventListener("DOMContentLoaded", function() {
+            renderProgramTable(programsData);
+            renderBeneficiaryTable(beneficiaryData);
+            renderDonorList();
+            renderMonevMatrix();
+            renderLegalDocs();
+            renderTaskApprovals();
+            renderAuditLogs();
+            initCharts();
+        });
+
+        // --- NAVIGATION HANDLER ---
+        function navigateTo(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('main > section');
+            sections.forEach(sec => sec.classList.add('hidden'));
+
+            // Show selected section
+            const targetSection = document.getElementById('section-' + sectionId);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+
+            // Update Nav Button Styles
+            const navButtons = document.querySelectorAll('#sidebar-nav button');
+            navButtons.forEach(btn => {
+                btn.classList.remove('bg-navy', 'text-white');
+                btn.classList.add('text-slate-700', 'hover:bg-slate-100');
+            });
+
+            const activeBtn = document.getElementById('nav-' + sectionId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-700', 'hover:bg-slate-100');
+                activeBtn.classList.add('bg-navy', 'text-white');
+            }
+        }
+
+        // --- ROLE SWITCHING LOGIC ---
+        function switchRole(role) {
+            const roleDesc = document.getElementById('role-description');
+            const govFootnote = document.getElementById('governance-footnote');
+
+            if (role === 'pengurus') {
+                roleDesc.textContent = 'Akses Penuh Pengurus (Pelaksana Operasional)';
+                govFootnote.textContent = 'Pengurus bertanggung jawab penuh atas pelaksanaan kegiatan dan pengurusan kekayaan yayasan (UU Yayasan Pasal 31 & 35).';
+            } else if (role === 'pembina') {
+                roleDesc.textContent = 'Akses Pembina (Kewenangan Tertinggi)';
+                govFootnote.textContent = 'Pembina memegang kewenangan tertinggi yang tidak diserahkan kepada Pengurus/Pengawas, termasuk pengesahan RKAT & Perubahan AD (Pasal 28).';
+            } else if (role === 'pengawas') {
+                roleDesc.textContent = 'Akses Pengawas (Audit & Kontrol Independent)';
+                govFootnote.textContent = 'Pengawas bertugas mengawasi serta memberi nasihat kepada Pengurus. Dilarang merangkap jabatan operasional (Pasal 40 & 42).';
+            } else if (role === 'lapangan') {
+                roleDesc.textContent = 'Akses Tim Lapangan (Input Output & Data)';
+                govFootnote.textContent = 'Akses terbatas wilayah operasional untuk verifikasi penerima manfaat dan pengunggahan bukti dokumentasi kegiatan.';
+            }
+        }
+
+        // --- RENDERING FUNCTIONS ---
+        function renderProgramTable(data) {
+            const tbody = document.getElementById('program-table-body');
+            tbody.innerHTML = '';
+            data.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-navy">${p.name}</td>
+                    <td class="p-3 uppercase text-[10px]"><span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">${p.cluster}</span></td>
+                    <td class="p-3">${p.location}</td>
+                    <td class="p-3">${p.real} / <span class="text-slate-500">${p.target}</span></td>
+                    <td class="p-3 font-semibold">${p.budget}</td>
+                    <td class="p-3"><span class="${p.status === 'Selesai' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'} px-2 py-0.5 rounded text-xs font-bold">${p.status}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="alert('Detail Program ID ${p.id}: ${p.name}')" class="bg-navy hover:bg-navy-light text-white px-2.5 py-1 rounded text-xs">Detail</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterProgram(cluster) {
+            if (cluster === 'all') {
+                renderProgramTable(programsData);
+            } else {
+                const filtered = programsData.filter(p => p.cluster === cluster);
+                renderProgramTable(filtered);
+            }
+        }
+
+        function renderBeneficiaryTable(data) {
+            const tbody = document.getElementById('beneficiary-table-body');
+            tbody.innerHTML = '';
+            data.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono text-slate-600">${b.nikHash}</td>
+                    <td class="p-3 font-bold text-navy">${b.name}</td>
+                    <td class="p-3">${b.location}</td>
+                    <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">${b.category}</span></td>
+                    <td class="p-3 text-slate-500">${b.date}</td>
+                    <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">${b.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function searchBeneficiary() {
+            const query = document.getElementById('nik-search-input').value.toLowerCase();
+            const filtered = beneficiaryData.filter(b => 
+                b.name.toLowerCase().includes(query) || b.nikHash.toLowerCase().includes(query) || b.location.toLowerCase().includes(query)
+            );
+            renderBeneficiaryTable(filtered);
+        }
+
+        function renderDonorList() {
+            const container = document.getElementById('donor-list-container');
+            container.innerHTML = '';
+            donorData.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'p-3 bg-white border border-slate-200 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-2';
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-navy text-sm">${d.partner}</div>
+                        <div class="text-slate-600">${d.project} • <span class="font-bold text-slate-800">${d.commitment}</span></div>
+                    </div>
+                    <div class="text-right">
+                        <span class="bg-gold/20 text-gold-dark px-2 py-0.5 rounded text-[10px] font-bold">${d.status}</span>
+                        <div class="text-[10px] text-slate-400 mt-1">Jatuh Tempo Laporan: ${d.reportDueDate}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderMonevMatrix() {
+            const container = document.getElementById('monev-matrix-container');
+            container.innerHTML = '';
+            monevData.forEach(m => {
+                const percentage = Math.min(100, Math.round((m.real / m.target) * 100));
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-2';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span class="text-navy text-sm">${m.indicator}</span>
+                        <span class="text-slate-600">${m.real} / ${m.target} ${m.unit} (${percentage}%)</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div class="bg-navy h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderLegalDocs() {
+            const container = document.getElementById('legal-docs-grid');
+            container.innerHTML = '';
+            legalData.forEach(l => {
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col justify-between';
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-navy text-sm">${l.docName}</h4>
+                            <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold">${l.alert}</span>
+                        </div>
+                        <p class="text-xs font-mono text-slate-500 mt-2">Nomor: ${l.no}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <span class="text-slate-600">${l.status}</span>
+                        <button onclick="alert('Membuka Berkas Arsip Digital Otentik...')" class="text-navy font-bold hover:underline">Unduh PDF</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderTaskApprovals() {
+            const container = document.getElementById('task-approval-list');
+            container.innerHTML = '';
+            taskData.forEach(t => {
+                const div = document.createElement('div');
+                div.className = `p-4 bg-white border ${t.urgent ? 'border-accent/40 bg-rose-50/20' : 'border-slate-200'} rounded-xl shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-3`;
+                div.innerHTML = `
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            ${t.urgent ? '<span class="text-[10px] bg-accent text-white font-bold px-1.5 py-0.5 rounded">URGENT SLA</span>' : ''}
+                            <h4 class="font-bold text-navy text-sm">${t.title}</h4>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1">Nilai/Scope: <strong>${t.amount}</strong> • Pemohon: ${t.requester}</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-500 mr-2">${t.status}</span>
+                        <button onclick="approveTask('${t.title}')" class="bg-navy hover:bg-navy-light text-white font-bold px-3 py-1.5 rounded text-xs transition">Setujui</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderAuditLogs() {
+            const container = document.getElementById('audit-log-box');
+            container.innerHTML = '';
+            auditLogs.forEach(log => {
+                const p = document.createElement('p');
+                p.textContent = log;
+                container.appendChild(p);
+            });
+        }
+
+        // --- INTERACTIVE ACTIONS ---
+        function quickApprove(itemTitle) {
+            alert('Aksi Eksekutif disahkan: ' + itemTitle + '. Notifikasi telah diteruskan ke Bendahara.');
+            auditLogs.unshift('[2026-10-30 17:00:00] EXEC_APPROVE: ' + itemTitle + ' disetujui oleh Pengurus.');
+            renderAuditLogs();
+        }
+
+        function approveTask(title) {
+            alert('Pengajuan [' + title + '] telah disetujui secara digital.');
+            auditLogs.unshift('[2026-10-30 17:02:15] WORKFLOW_OK: Approval granted for ' + title);
+            renderAuditLogs();
+        }
+
+        function generateDonorReport() {
+            alert('Laporan Pertanggungjawaban Dampak Donatur berhasil disintesis oleh AI Reporting Module dalam format PDF.');
+        }
+
+        function previewReport(docTitle) {
+            alert('Menampilkan pratinjau resmi dokumen: ' + docTitle + ' (Format Otentik YSKN).');
+        }
+
+        // --- CHART.JS INITIALIZATION ---
+        function initCharts() {
+            // Chart 1: Executive Overview Trends
+            const ctxOverview = document.getElementById('overviewFinancialChart').getContext('2d');
+            overviewChart = new Chart(ctxOverview, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt'],
+                    datasets: [
+                        {
+                            label: 'Penerimaan Donasi (Juta Rp)',
+                            data: [400, 450, 600, 520, 480, 510, 550, 490, 430, 420],
+                            borderColor: '#C9A227',
+                            backgroundColor: 'rgba(201, 162, 39, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Penyaluran Program (Juta Rp)',
+                            data: [310, 380, 520, 410, 390, 400, 420, 380, 350, 360],
+                            borderColor: '#0A1628',
+                            backgroundColor: 'rgba(10, 22, 40, 0.05)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) { label += 'Rp ' + context.parsed.y + ' Juta'; }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#E2E8F0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Chart 2: Allocation Donut
+            const ctxAllocation = document.getElementById('financialAllocationChart').getContext('2d');
+            allocationChart = new Chart(ctxAllocation, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dana Terikat Program', 'Dana Bebas / Kas Umum', 'Dana Operasional Yayasan'],
+                    datasets: [{
+                        data: [2450, 1230, 1170],
+                        backgroundColor: ['#153869', '#C9A227', '#E11D48']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // Chart 3: Budget Variance
+            const ctxBudget = document.getElementById('budgetVarianceChart').getContext('2d');
+            budgetChart = new Chart(ctxBudget, {
+                type: 'bar',
+                data: {
+                    labels: ['Bencana', 'Pendidikan', 'Kesehatan', 'Operasional'],
+                    datasets: [
+                        { label: 'Target RKAT', data: [800, 700, 500, 300], backgroundColor: '#153869' },
+                        { label: 'Realisasi', data: [730, 600, 320, 280], backgroundColor: '#C9A227' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#E2E8F0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
