@@ -95,25 +95,14 @@
             filter: drop-shadow(0px 0px 4px rgba(235, 10, 89, 0.4));
         }
     </style>
-    <!-- Chosen Palette: YSKN Navy Blue (#0A1628), Secondary Navy (#153869), Accent Gold (#C9A227), Brand Pink-Red (#eb0a59), Interactive Pink-Red (#E11D48), Canvas Neutral Light (#FAFAFC) -->
-    <!-- Application Structure Plan:
-        Header Mobile Responsiveness Fix:
-        - Adjusted header flex layout and spacing to prevent text truncation/overflow on mobile screens.
-        - Compacted role selector drop-down and brand title elements on small screens.
-        - All dynamic sections, tables, filters, charts, and actions function seamlessly on mobile, tablet, and widescreen.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. Bootstrap Icons used via CDN font icons. NO Mermaid JS used. -->
 </head>
 <body class="h-full text-slate-800 flex flex-col font-sans select-none antialiased bg-slate-50">
 
     <!-- Top Masthead / Header -->
     <header class="bg-navy text-white flex-shrink-0 border-b-2 border-gold sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-            <!-- Brand & Mobile Menu Button -->
+            <!-- Brand -->
             <div class="flex items-center space-x-1.5 sm:space-x-3 min-w-0 flex-1">
-                <button onclick="toggleMobileSidebar()" class="md:hidden touch-target flex flex-shrink-0 items-center justify-center p-1.5 rounded-lg bg-navy-light text-gold hover:bg-navy-muted focus:outline-none focus:ring-2 focus:ring-gold" aria-label="Buka Menu Sidebar">
-                    <i class="bi bi-list text-xl"></i>
-                </button>
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded bg-navy-light border border-gold flex items-center justify-center font-bold text-gold text-xs sm:text-xl shadow flex-shrink-0">
                     YSKN
                 </div>
@@ -193,9 +182,10 @@
                         <span>Penerima Manfaat</span>
                     </span>
                 </button>
+                <!-- PERBAIKAN: Mengganti bi-handshake dengan bi-gift agar ikon terlihat -->
                 <button onclick="navigateTo('donasi')" id="nav-donasi" class="nav-btn touch-target w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
                     <span class="flex items-center space-x-2.5">
-                        <i class="bi bi-handshake text-base text-navy"></i>
+                        <i class="bi bi-gift text-base text-navy"></i>
                         <span>Donasi & Kemitraan</span>
                     </span>
                 </button>
@@ -572,7 +562,7 @@
             <!-- SECTION 5: DONASI & KEMITRAAN -->
             <section id="section-donasi" class="space-y-6 hidden">
                 <div class="bg-slate-50 border-l-4 border-navy p-4 rounded-r-lg flex items-start space-x-3">
-                    <i class="bi bi-handshake text-2xl text-navy"></i>
+                    <i class="bi bi-gift text-2xl text-navy"></i>
                     <div>
                         <h2 class="text-base sm:text-lg font-bold text-navy">Manajemen Donatur & Mitramania (CRM)</h2>
                         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
