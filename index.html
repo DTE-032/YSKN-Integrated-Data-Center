@@ -98,6 +98,64 @@
 </head>
 <body class="h-full text-slate-800 flex flex-col font-sans select-none antialiased bg-slate-50">
 
+    <!-- Login Overlay Modal (Wajib Login Sebelum Akses Dashboard) -->
+    <div id="login-overlay" class="fixed inset-0 bg-navy/95 z-50 flex items-center justify-center p-4">
+        <div class="bg-white text-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 border-2 border-gold relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-navy via-gold to-brand"></div>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 mx-auto rounded-xl bg-navy border-2 border-gold flex items-center justify-center font-bold text-gold text-2xl shadow-md mb-3">
+                    YSKN
+                </div>
+                <h2 class="text-xl font-bold text-navy">Autentikasi Organ Yayasan</h2>
+                <p class="text-xs text-slate-500 mt-1">Silakan pilih peran dan masukkan PIN akses untuk masuk ke sistem kendali.</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Pilih Peran / Organ Login:</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center space-x-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition font-medium text-xs">
+                            <input type="radio" name="login-role" value="pengurus" checked class="text-brand focus:ring-brand">
+                            <span>👤 Pengurus</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition font-medium text-xs">
+                            <input type="radio" name="login-role" value="pembina" class="text-brand focus:ring-brand">
+                            <span>👑 Pembina</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition font-medium text-xs">
+                            <input type="radio" name="login-role" value="pengawas" class="text-brand focus:ring-brand">
+                            <span>🔍 Pengawas</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition font-medium text-xs">
+                            <input type="radio" name="login-role" value="lapangan" class="text-brand focus:ring-brand">
+                            <span>⛺ Lapangan</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1 uppercase">PIN / Kata Sandi Akses:</label>
+                    <div class="relative">
+                        <i class="bi bi-shield-lock absolute left-3 top-3 text-slate-400"></i>
+                        <input type="password" id="login-pin" value="yskn2026" required placeholder="Masukkan PIN Akses" class="w-full text-xs pl-9 p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy">
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Default PIN demo: <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-600">yskn2026</code></p>
+                </div>
+
+                <div id="login-error" class="text-brand text-xs font-semibold hidden text-center"></div>
+
+                <button type="submit" class="w-full bg-navy hover:bg-navy-light text-gold font-bold py-3 px-4 rounded-xl shadow-md transition duration-200 text-xs sm:text-sm flex items-center justify-center space-x-2 touch-target border border-gold/40">
+                    <i class="bi bi-box-arrow-in-right text-base"></i>
+                    <span>Masuk ke Dashboard YSKN</span>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400">
+                <p>Dilindungi UU No. 16/2001 tentang Yayasan • Akses Terbatas Sesuai Kewenangan Organ</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Masthead / Header -->
     <header class="bg-navy text-white flex-shrink-0 border-b-2 border-gold sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
@@ -112,19 +170,21 @@
                 </div>
             </div>
 
-            <!-- Role Selector & Status -->
-            <div class="flex items-center space-x-1.5 flex-shrink-0">
+            <!-- Logged-in User Info & Logout Button (Pengganti Dropdown Role Selector) -->
+            <div class="flex items-center space-x-2 flex-shrink-0">
                 <div class="hidden lg:flex flex-col text-right">
-                    <span class="text-[10px] text-slate-300">Mode Modul Organ Yayasan:</span>
+                    <span class="text-[10px] text-slate-300">Status Sesi Aktif:</span>
                     <span id="role-description" class="text-xs font-semibold text-gold">Akses Penuh Pengurus (Pelaksana)</span>
                 </div>
-                <div class="relative">
-                    <select id="role-selector" onchange="switchRole(this.value)" class="bg-navy-light text-white text-[11px] sm:text-xs font-medium border border-gold/50 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold cursor-pointer touch-target max-w-[110px] sm:max-w-none truncate">
-                        <option value="pengurus" selected>👤 Pengurus</option>
-                        <option value="pembina">👑 Pembina</option>
-                        <option value="pengawas">🔍 Pengawas</option>
-                        <option value="lapangan">⛺ Lapangan</option>
-                    </select>
+                <div class="flex items-center space-x-2 bg-navy-light border border-gold/50 rounded-lg px-2.5 py-1.5">
+                    <span id="current-user-badge" class="text-xs font-bold text-gold flex items-center space-x-1.5">
+                        <i class="bi bi-person-badge"></i>
+                        <span id="user-role-label">Pengurus</span>
+                    </span>
+                    <button onclick="handleLogout()" title="Keluar / Ganti Peran" class="touch-target bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2 py-1 rounded transition flex items-center space-x-1">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span class="hidden sm:inline">Keluar</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -182,7 +242,6 @@
                         <span>Penerima Manfaat</span>
                     </span>
                 </button>
-                <!-- PERBAIKAN: Mengganti bi-handshake dengan bi-gift agar ikon terlihat -->
                 <button onclick="navigateTo('donasi')" id="nav-donasi" class="nav-btn touch-target w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-slate-700 hover:bg-slate-100">
                     <span class="flex items-center space-x-2.5">
                         <i class="bi bi-gift text-base text-navy"></i>
@@ -611,7 +670,7 @@
                     <div>
                         <h2 class="text-base sm:text-lg font-bold text-navy">Monitoring, Evaluasi & Kerangka Dampak (Monev)</h2>
                         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-                            Pengukuran capaian berbasis <em>Social Return on Investment</em> (<b>SROI</b>) dan indikator kinerja utama (<b>KPI</b>). Menghubungkan output fisik langsung dengan dampak jangka panjang pada masyarakat sasaran.
+                            Pengukuran capaian berbasis *Social Return on Investment* (SROI) dan indikator kinerja utama (*KPI*). Menghubungkan output fisik langsung dengan dampak jangka panjang pada masyarakat sasaran.
                         </p>
                     </div>
                 </div>
@@ -629,7 +688,7 @@
                     <div>
                         <h2 class="text-base sm:text-lg font-bold text-navy">Brankas Digital Legalitas & Pengingat Masa Berlaku</h2>
                         <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-                            Menyimpan seluruh dokumen otentik yayasan (Akta Pendirian, SK Kemenkumham, Izin Kegiatan Kemensos, SOP Operasional). Dilengkapi sistem <strong><em>Expiration Alert Engine</em></strong> bertingkat (H-90 s/d H-7).
+                            Menyimpan seluruh dokumen otentik yayasan (Akta Pendirian, SK Kemenkumham, Izin Kegiatan Kemensos, SOP Operasional). Dilengkapi sistem <em>Expiration Alert Engine</em> bertingkat (H-90 s/d H-7).
                         </p>
                     </div>
                 </div>
@@ -878,6 +937,43 @@
             });
         });
 
+        // --- AUTHENTICATION / LOGIN LOGIC ---
+        function handleLogin(event) {
+            event.preventDefault();
+            const pinInput = document.getElementById('login-pin').value;
+            const errorDiv = document.getElementById('login-error');
+            const selectedRoleRadio = document.querySelector('input[name="login-role"]:checked');
+
+            if (pinInput !== 'yskn2026') {
+                errorDiv.textContent = 'PIN akses salah! Gunakan PIN demo: yskn2026';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            errorDiv.classList.add('hidden');
+            const role = selectedRoleRadio ? selectedRoleRadio.value : 'pengurus';
+            
+            // Sembunyikan modal login
+            document.getElementById('login-overlay').classList.add('hidden');
+
+            // Atur role aktif
+            switchRole(role);
+
+            // Catat ke audit log
+            auditLogs.unshift(`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] AUTH_LOGIN: Pengguna berhasil login sebagai ${role.toUpperCase()}.`);
+            renderAuditLogs();
+        }
+
+        function handleLogout() {
+            // Tampilkan kembali modal login
+            document.getElementById('login-pin').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('login-overlay').classList.remove('hidden');
+            
+            auditLogs.unshift(`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] AUTH_LOGOUT: Sesi diakhiri oleh pengguna.`);
+            renderAuditLogs();
+        }
+
         // --- MOBILE SIDEBAR TOGGLE ---
         function toggleMobileSidebar(show) {
             const sidebar = document.getElementById('mobile-sidebar');
@@ -946,17 +1042,22 @@
         function switchRole(role) {
             const roleDesc = document.getElementById('role-description');
             const govFootnote = document.getElementById('governance-footnote');
+            const userRoleLabel = document.getElementById('user-role-label');
 
             if (role === 'pengurus') {
+                if(userRoleLabel) userRoleLabel.textContent = 'Pengurus';
                 if(roleDesc) roleDesc.textContent = 'Akses Penuh Pengurus (Pelaksana Operasional)';
                 govFootnote.textContent = 'Pengurus bertanggung jawab penuh atas pelaksanaan kegiatan dan pengurusan kekayaan yayasan (UU Yayasan Pasal 31 & 35).';
             } else if (role === 'pembina') {
+                if(userRoleLabel) userRoleLabel.textContent = 'Pembina';
                 if(roleDesc) roleDesc.textContent = 'Akses Pembina (Kewenangan Tertinggi)';
                 govFootnote.textContent = 'Pembina memegang kewenangan tertinggi yang tidak diserahkan kepada Pengurus/Pengawas, termasuk pengesahan RKAT & Perubahan AD (Pasal 28).';
             } else if (role === 'pengawas') {
+                if(userRoleLabel) userRoleLabel.textContent = 'Pengawas';
                 if(roleDesc) roleDesc.textContent = 'Akses Pengawas (Audit & Kontrol Independent)';
                 govFootnote.textContent = 'Pengawas bertugas mengawasi serta memberi nasihat kepada Pengurus. Dilarang merangkap jabatan operasional (Pasal 40 & 42).';
             } else if (role === 'lapangan') {
+                if(userRoleLabel) userRoleLabel.textContent = 'Lapangan';
                 if(roleDesc) roleDesc.textContent = 'Akses Tim Lapangan (Input Output & Data)';
                 govFootnote.textContent = 'Akses terbatas wilayah operasional untuk verifikasi penerima manfaat dan pengunggahan bukti dokumentasi kegiatan.';
             }
